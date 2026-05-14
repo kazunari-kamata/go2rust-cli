@@ -83,6 +83,16 @@ cargo run -- convert -i examples/hello.go
 
 CI と同じ品質ゲートは `cargo fmt -- --check`、`cargo clippy -- -D warnings`、`cargo test`。
 
+## バージョン管理
+
+- このプロジェクトは GitHub 上では Git リポジトリとして公開する。
+- ローカル作業はできるだけ `jj` を使う。
+- 既存 Git リポジトリでは `jj git init --colocate .` 済みの colocated repo として扱う。
+- リモート同期は `jj git fetch` と `jj git push` を優先する。
+- 履歴確認は `jj log`、状態確認は `jj status`、差分確認は `jj diff` を優先する。
+- ブックマーク操作は `jj bookmark` を使う。`main` は `main@origin` をtrackする。
+- `git` は `jj` で扱いづらい GitHub CLI 連携や緊急確認の補助に限定する。
+
 ## 実装時の注意
 
 - 新しい変換を足す場合は、まず `tests/convert_test.rs` に期待出力を追加する。
@@ -91,4 +101,3 @@ CI と同じ品質ゲートは `cargo fmt -- --check`、`cargo clippy -- -D warn
 - Rust 出力の末尾には改行を付ける。
 - README は利用者向け、`AGENTS.md` と `docs/spec.md` は開発者・エージェント向けとして役割を分ける。
 - ローカル環境固有の絶対パスやユーザー名をドキュメント、コメント、コミットメッセージに含めない。
-
