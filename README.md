@@ -41,6 +41,28 @@ go2rust-cli convert --input input.go --output output.rs
 go2rust-cli convert -i input.go --check
 ```
 
+## Releases / Packages
+
+バージョンは Major.Minor.Patch の SemVer で管理します。
+
+- `Cargo.toml`: `0.1.0`
+- Git tag: `v0.1.0`
+
+`vMAJOR.MINOR.PATCH` 形式の tag を push すると、GitHub Actions が GitHub Release と GitHub Container Registry package を生成します。
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Container image の利用例です。
+
+```sh
+docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 convert -i examples/hello.go
+```
+
+詳細は [docs/release.md](docs/release.md) を参照してください。
+
 ## 対応済み構文
 
 - `package main` をコメントとして出力
@@ -71,4 +93,3 @@ go2rust-cli convert -i input.go --check
 - import と依存関係の Rust crate への対応付け
 - 変換結果の整形と `rustfmt` 連携
 - 未対応構文レポートの出力
-

@@ -93,6 +93,13 @@ CI と同じ品質ゲートは `cargo fmt -- --check`、`cargo clippy -- -D warn
 - ブックマーク操作は `jj bookmark` を使う。`main` は `main@origin` をtrackする。
 - `git` は `jj` で扱いづらい GitHub CLI 連携や緊急確認の補助に限定する。
 
+## Release / Package
+
+- バージョンは Major.Minor.Patch の SemVer で管理する。
+- `Cargo.toml` の `package.version` と Git tag `vMAJOR.MINOR.PATCH` は一致させる。
+- tag push で `.github/workflows/release.yml` が GitHub Release と GHCR package を作成する。
+- Release 手順を変更した場合は `docs/release.md` も更新する。
+
 ## 実装時の注意
 
 - 新しい変換を足す場合は、まず `tests/convert_test.rs` に期待出力を追加する。
