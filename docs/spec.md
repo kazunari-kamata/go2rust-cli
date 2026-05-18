@@ -85,6 +85,22 @@ fn main() {
 }
 ```
 
+### named function with parameters and return type
+
+入力:
+
+```go
+func add(a, b int) int {
+}
+```
+
+出力:
+
+```rust
+fn add(a: i32, b: i32) -> i32 {
+}
+```
+
 ### fmt.Println
 
 入力:
@@ -113,6 +129,24 @@ var name string
 let mut name: String;
 ```
 
+### variable declaration with initializer
+
+入力:
+
+```go
+var name string = "value"
+var enabled bool = true
+var total float64 = 1.5
+```
+
+出力:
+
+```rust
+let mut name: String = "value";
+let mut enabled: bool = true;
+let mut total: f64 = 1.5;
+```
+
 ### int variable declaration with initializer
 
 入力:
@@ -125,6 +159,50 @@ var count int = 1
 
 ```rust
 let mut count: i32 = 1;
+```
+
+### short variable declaration
+
+入力:
+
+```go
+count := 1
+```
+
+出力:
+
+```rust
+let mut count = 1;
+```
+
+### assignment
+
+入力:
+
+```go
+count = count + 1
+```
+
+出力:
+
+```rust
+count = count + 1;
+```
+
+### simple if block
+
+入力:
+
+```go
+if count > 0 {
+}
+```
+
+出力:
+
+```rust
+if count > 0 {
+}
 ```
 
 ### return
@@ -174,14 +252,11 @@ if count > 0 {
 
 優先度の高い候補:
 
-- `var name string = "value"`
-- `var enabled bool = true`
-- `var total float64 = 1.5`
-- 短変数宣言 `:=`
 - import ブロック
-- `func add(a int, b int) int`
-- 単純な `if` 文
 - 単純な `for` 文
+- `else` / `else if`
+- 複数戻り値
+- 配列、スライス、map の基本変換
 
 将来的な候補:
 
@@ -198,4 +273,3 @@ if count > 0 {
 - TODO コメント形式は後続ツールが利用できるように維持する。
 - 出力の基本インデントは4スペースを維持する。
 - 既存テストの期待出力を変える場合は、仕様変更として README とこのドキュメントも更新する。
-
