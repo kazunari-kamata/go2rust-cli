@@ -12,6 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout sample inputs
+        uses: actions/checkout@v4
+        with:
+          repository: kazunari-kamata/go2rust-cli-samples
+          path: go2rust-cli-samples
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -26,3 +32,26 @@ jobs:
       - name: Run tests
         run: cargo test
 
+      - name: Verify sample conversions
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r sample; do
+            echo "Converting supported sample: ${sample}"
+            output="$(cargo run --quiet -- convert -i "${sample}")"
+            if grep -q "TODO(go2rust)" <<<"${output}"; then
+              echo "Supported sample produced TODO output: ${sample}"
+              echo "${output}"
+              exit 1
+            fi
+          done < <(find go2rust-cli-samples/samples/basic -name '*.go' | sort)
+
+          while IFS= read -r sample; do
+            echo "Converting unsupported sample: ${sample}"
+            output="$(cargo run --quiet -- convert -i "${sample}")"
+            if ! grep -q "TODO(go2rust)" <<<"${output}"; then
+              echo "Unsupported sample did not produce TODO output: ${sample}"
+              echo "${output}"
+              exit 1
+            fi
+          done < <(find go2rust-cli-samples/samples/unsupported -name '*.go' | sort)
