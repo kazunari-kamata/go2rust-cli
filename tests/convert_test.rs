@@ -107,3 +107,75 @@ fn add(a: i32, b: i32) -> i32 {
 
     assert_eq!(actual, expected);
 }
+
+#[test]
+fn converts_else_if_else_print_and_empty_return() {
+    let source = r#"package main
+
+import "fmt"
+
+func describe(count int) {
+    if count > 10 {
+        fmt.Print("large")
+        return
+    } else if count > 0 {
+        fmt.Println("positive")
+    } else {
+        fmt.Println("zero")
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+
+fn describe(count: i32) {
+    if count > 10 {
+        print!("large");
+        return;
+    } else if count > 0 {
+        println!("positive");
+    } else {
+        println!("zero");
+    }
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn converts_simple_function_call_statements() {
+    let source = r#"package main
+
+func logIfEnabled(enabled bool) {
+    if !enabled {
+        return
+    }
+}
+
+func main() {
+    logIfEnabled(true)
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+fn logIfEnabled(enabled: bool) {
+    if !enabled {
+        return;
+    }
+}
+
+fn main() {
+    logIfEnabled(true);
+}
+"#;
+
+    assert_eq!(actual, expected);
+}

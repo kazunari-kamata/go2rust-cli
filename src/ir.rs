@@ -13,7 +13,10 @@ pub enum IrItem {
         return_type: Option<String>,
     },
     IfStart(String),
+    ElseIfStart(String),
+    ElseStart,
     BlockEnd,
+    Print(String),
     Println(String),
     VarDecl {
         name: String,
@@ -28,7 +31,8 @@ pub enum IrItem {
         name: String,
         value: String,
     },
-    Return(String),
+    ExpressionStmt(String),
+    Return(Option<String>),
     Todo(String),
     Empty,
 }

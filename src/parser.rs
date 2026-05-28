@@ -7,12 +7,16 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let import_re = Regex::new(r#"^\s*import\s+"([^"]+)"\s*$"#)?;
     let func_re =
         Regex::new(r"^\s*func\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*([A-Za-z_]\w*)?\s*\{\s*$")?;
+    let print_re = Regex::new(r#"^\s*fmt\.Print\((.*)\)\s*$"#)?;
     let println_re = Regex::new(r#"^\s*fmt\.Println\((.*)\)\s*$"#)?;
     let var_re = Regex::new(r"^\s*var\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)\s*(?:=\s*(.+))?\s*$")?;
     let short_var_re = Regex::new(r"^\s*([A-Za-z_]\w*)\s*:=\s*(.+)\s*$")?;
     let assignment_re = Regex::new(r"^\s*([A-Za-z_]\w*)\s*=\s*(.+)\s*$")?;
     let if_re = Regex::new(r"^\s*if\s+(.+)\s*\{\s*$")?;
-    let return_re = Regex::new(r"^\s*return\s+(.+)\s*$")?;
+    let else_if_re = Regex::new(r"^\s*}\s*else\s+if\s+(.+)\s*\{\s*$")?;
+    let else_re = Regex::new(r"^\s*}\s*else\s*\{\s*$")?;
+    let return_re = Regex::new(r"^\s*return(?:\s+(.+))?\s*$")?;
+    let function_call_re = Regex::new(r"^\s*([A-Za-z_]\w*\(.*\))\s*$")?;
     let block_end_re = Regex::new(r"^\s*}\s*$")?;
 
     let mut items = Vec::new();
@@ -35,6 +39,8 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
                     .get(3)
                     .map(|go_type| rust_type(go_type.as_str()).to_string()),
             });
+        } else if let Some(caps) = print_re.captures(line) {
+            items.push(IrItem::Print(translate_expression(caps[1].trim())));
         } else if let Some(caps) = println_re.captures(line) {
             items.push(IrItem::Println(translate_expression(caps[1].trim())));
         } else if let Some(caps) = var_re.captures(line) {
@@ -57,8 +63,17 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             });
         } else if let Some(caps) = if_re.captures(line) {
             items.push(IrItem::IfStart(translate_expression(caps[1].trim())));
+        } else if let Some(caps) = else_if_re.captures(line) {
+            items.push(IrItem::ElseIfStart(translate_expression(caps[1].trim())));
+        } else if else_re.is_match(line) {
+            items.push(IrItem::ElseStart);
         } else if let Some(caps) = return_re.captures(line) {
-            items.push(IrItem::Return(translate_expression(caps[1].trim())));
+            items.push(IrItem::Return(
+                caps.get(1)
+                    .map(|value| translate_expression(value.as_str().trim())),
+            ));
+        } else if let Some(caps) = function_call_re.captures(line) {
+            items.push(IrItem::ExpressionStmt(translate_expression(caps[1].trim())));
         } else if block_end_re.is_match(line) && unsupported_block_depth > 0 {
             unsupported_block_depth -= 1;
             items.push(IrItem::Todo(trimmed.to_string()));

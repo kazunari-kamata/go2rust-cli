@@ -69,6 +69,7 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 - `import "fmt"` をコメントとして出力
 - `func main() { ... }` を `fn main() { ... }` に変換
 - `func add(a, b int) int { ... }` を `fn add(a: i32, b: i32) -> i32 { ... }` に変換
+- `fmt.Print("hello")` を `print!("hello");` に変換
 - `fmt.Println("hello")` を `println!("hello");` に変換
 - `var name string` を `let mut name: String;` に変換
 - `var name string = "value"` を `let mut name: String = "value";` に変換
@@ -77,14 +78,18 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 - `var total float64 = 1.5` を `let mut total: f64 = 1.5;` に変換
 - `count := 1` を `let mut count = 1;` に変換
 - `count = count + 1` を `count = count + 1;` に変換
+- `logIfEnabled(true)` を `logIfEnabled(true);` に変換
 - `if count > 0 { ... }` を `if count > 0 { ... }` に変換
+- `} else if count > 0 {` を `} else if count > 0 {` に変換
+- `} else {` を `} else {` に変換
 - `return x` を `return x;` に変換
+- `return` を `return;` に変換
 
 ## 未対応構文
 
 次のような構文は初期版では変換せず、`TODO(go2rust)` コメントとして出力します。
 
-- 複雑な `if` / `for` / `switch`
+- 複雑な条件式 / `for` / `switch`
 - 構造体、インターフェース、メソッド
 - 複数 import や import ブロック
 - 複雑な Go の型推論

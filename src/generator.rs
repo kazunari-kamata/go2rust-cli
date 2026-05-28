@@ -28,9 +28,22 @@ pub fn generate(items: &[IrItem]) -> String {
                 lines.push(format!("{}if {condition} {{", indent(indent_level)));
                 indent_level += 1;
             }
+            IrItem::ElseIfStart(condition) => {
+                indent_level = indent_level.saturating_sub(1);
+                lines.push(format!("{}}} else if {condition} {{", indent(indent_level)));
+                indent_level += 1;
+            }
+            IrItem::ElseStart => {
+                indent_level = indent_level.saturating_sub(1);
+                lines.push(format!("{}}} else {{", indent(indent_level)));
+                indent_level += 1;
+            }
             IrItem::BlockEnd => {
                 indent_level = indent_level.saturating_sub(1);
                 lines.push(format!("{}}}", indent(indent_level)));
+            }
+            IrItem::Print(args) => {
+                lines.push(format!("{}print!({args});", indent(indent_level)));
             }
             IrItem::Println(args) => {
                 lines.push(format!("{}println!({args});", indent(indent_level)));
@@ -52,8 +65,15 @@ pub fn generate(items: &[IrItem]) -> String {
             IrItem::Assignment { name, value } => {
                 lines.push(format!("{}{name} = {value};", indent(indent_level)));
             }
+            IrItem::ExpressionStmt(expression) => {
+                lines.push(format!("{}{expression};", indent(indent_level)));
+            }
             IrItem::Return(value) => {
-                lines.push(format!("{}return {value};", indent(indent_level)));
+                let line = match value {
+                    Some(value) => format!("return {value};"),
+                    None => "return;".to_string(),
+                };
+                lines.push(format!("{}{}", indent(indent_level), line));
             }
             IrItem::Todo(original) => {
                 lines.push(format!(
