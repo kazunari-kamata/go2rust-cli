@@ -316,6 +316,36 @@ match count {
 }
 ```
 
+### condition switch block
+
+入力:
+
+```go
+switch {
+case count > 10:
+    fmt.Println("large")
+case count > 0, count == -1:
+    fmt.Println("known")
+default:
+    fmt.Println("zero")
+}
+```
+
+出力:
+
+```rust
+match () {
+    _ if count > 10 => {
+        println!("large");
+    },
+    _ if count > 0 || count == -1 => {
+        println!("known");
+    },
+    _ => {
+        println!("zero");
+    },
+}
+```
 ### return
 
 入力:

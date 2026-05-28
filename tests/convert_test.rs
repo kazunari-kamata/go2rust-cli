@@ -266,3 +266,67 @@ fn describe(count: i32) {
 
     assert_eq!(actual, expected);
 }
+
+#[test]
+fn converts_condition_switch_blocks() {
+    let source = r#"package main
+
+import "fmt"
+
+func describe(count int) {
+    switch {
+    case count > 10:
+        fmt.Println("large")
+    case count > 0, count == -1:
+        fmt.Println("known")
+    default:
+        fmt.Println("zero")
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+
+fn describe(count: i32) {
+    match () {
+        _ if count > 10 => {
+            println!("large");
+        },
+        _ if count > 0 || count == -1 => {
+            println!("known");
+        },
+        _ => {
+            println!("zero");
+        },
+    }
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn keeps_fallthrough_as_todo_inside_switch_arm() {
+    let source = r#"package main
+
+import "fmt"
+
+func describe(count int) {
+    switch count {
+    case 1:
+        fallthrough
+    default:
+        fmt.Println("done")
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    assert!(actual.contains("// TODO(go2rust): original line: fallthrough"));
+    assert!(actual.contains("_ => {"));
+}
