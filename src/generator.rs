@@ -38,6 +38,14 @@ pub fn generate(items: &[IrItem]) -> String {
                 lines.push(format!("{}}} else {{", indent(indent_level)));
                 indent_level += 1;
             }
+            IrItem::LoopStart => {
+                lines.push(format!("{}loop {{", indent(indent_level)));
+                indent_level += 1;
+            }
+            IrItem::WhileStart(condition) => {
+                lines.push(format!("{}while {condition} {{", indent(indent_level)));
+                indent_level += 1;
+            }
             IrItem::BlockEnd => {
                 indent_level = indent_level.saturating_sub(1);
                 lines.push(format!("{}}}", indent(indent_level)));

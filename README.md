@@ -82,6 +82,8 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 - `if count > 0 { ... }` を `if count > 0 { ... }` に変換
 - `} else if count > 0 {` を `} else if count > 0 {` に変換
 - `} else {` を `} else {` に変換
+- `for { ... }` を `loop { ... }` に変換
+- `for count > 0 { ... }` を `while count > 0 { ... }` に変換
 - `return x` を `return x;` に変換
 - `return` を `return;` に変換
 
@@ -89,7 +91,8 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 
 次のような構文は初期版では変換せず、`TODO(go2rust)` コメントとして出力します。
 
-- 複雑な条件式 / `for` / `switch`
+- 3句 `for`、`range`、`switch`
+- 複雑な条件式
 - 構造体、インターフェース、メソッド
 - 複数 import や import ブロック
 - 複雑な Go の型推論
