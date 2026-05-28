@@ -115,6 +115,20 @@ fmt.Println("hello")
 println!("hello");
 ```
 
+### fmt.Print
+
+入力:
+
+```go
+fmt.Print("hello")
+```
+
+出力:
+
+```rust
+print!("hello");
+```
+
 ### string variable declaration
 
 入力:
@@ -189,6 +203,20 @@ count = count + 1
 count = count + 1;
 ```
 
+### simple function call statement
+
+入力:
+
+```go
+logIfEnabled(true)
+```
+
+出力:
+
+```rust
+logIfEnabled(true);
+```
+
 ### simple if block
 
 入力:
@@ -205,6 +233,26 @@ if count > 0 {
 }
 ```
 
+### simple else if / else block
+
+入力:
+
+```go
+if count > 10 {
+} else if count > 0 {
+} else {
+}
+```
+
+出力:
+
+```rust
+if count > 10 {
+} else if count > 0 {
+} else {
+}
+```
+
 ### return
 
 入力:
@@ -217,6 +265,18 @@ return x
 
 ```rust
 return x;
+```
+
+入力:
+
+```go
+return
+```
+
+出力:
+
+```rust
+return;
 ```
 
 ### unsupported line
@@ -254,7 +314,6 @@ if count > 0 {
 
 - import ブロック
 - 単純な `for` 文
-- `else` / `else if`
 - 複数戻り値
 - 配列、スライス、map の基本変換
 
