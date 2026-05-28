@@ -17,6 +17,9 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let else_re = Regex::new(r"^\s*}\s*else\s*\{\s*$")?;
     let infinite_for_re = Regex::new(r"^\s*for\s*\{\s*$")?;
     let conditional_for_re = Regex::new(r"^\s*for\s+([^;]+)\s*\{\s*$")?;
+    let switch_re = Regex::new(r"^\s*switch\s+(.+)\s*\{\s*$")?;
+    let case_re = Regex::new(r"^\s*case\s+(.+):\s*$")?;
+    let default_re = Regex::new(r"^\s*default:\s*$")?;
     let return_re = Regex::new(r"^\s*return(?:\s+(.+))?\s*$")?;
     let function_call_re = Regex::new(r"^\s*([A-Za-z_]\w*\(.*\))\s*$")?;
     let block_end_re = Regex::new(r"^\s*}\s*$")?;
@@ -79,6 +82,12 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             } else {
                 items.push(IrItem::WhileStart(translate_expression(condition)));
             }
+        } else if let Some(caps) = switch_re.captures(line) {
+            items.push(IrItem::SwitchStart(translate_expression(caps[1].trim())));
+        } else if let Some(caps) = case_re.captures(line) {
+            items.push(IrItem::CaseStart(translate_case_patterns(caps[1].trim())));
+        } else if default_re.is_match(line) {
+            items.push(IrItem::DefaultCaseStart);
         } else if let Some(caps) = return_re.captures(line) {
             items.push(IrItem::Return(
                 caps.get(1)
@@ -148,4 +157,13 @@ fn rust_type(go_type: &str) -> &str {
 
 fn translate_expression(expression: &str) -> String {
     expression.trim().to_string()
+}
+
+fn translate_case_patterns(patterns: &str) -> String {
+    patterns
+        .split(',')
+        .map(str::trim)
+        .filter(|pattern| !pattern.is_empty())
+        .collect::<Vec<_>>()
+        .join(" | ")
 }

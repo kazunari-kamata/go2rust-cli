@@ -285,6 +285,37 @@ loop {
 }
 ```
 
+### simple switch block
+
+入力:
+
+```go
+switch count {
+case 0:
+    fmt.Println("zero")
+case 1, 2:
+    fmt.Println("small")
+default:
+    fmt.Println("many")
+}
+```
+
+出力:
+
+```rust
+match count {
+    0 => {
+        println!("zero");
+    },
+    1 | 2 => {
+        println!("small");
+    },
+    _ => {
+        println!("many");
+    },
+}
+```
+
 ### return
 
 入力:
@@ -316,13 +347,13 @@ return;
 入力:
 
 ```go
-switch count {
+for _, value := range values {
 ```
 
 出力:
 
 ```rust
-// TODO(go2rust): original line: switch count {
+// TODO(go2rust): original line: for _, value := range values {
 ```
 
 ## 内部設計

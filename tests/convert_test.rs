@@ -36,8 +36,7 @@ fn keeps_unsupported_lines_as_todo_comments() {
     let source = r#"package main
 
 func main() {
-    switch count {
-    case 1:
+    for _, value := range values {
         fmt.Println("nested")
     }
 }
@@ -45,8 +44,7 @@ func main() {
 
     let actual = convert_source(source).expect("conversion should succeed");
 
-    assert!(actual.contains("// TODO(go2rust): original line: switch count {"));
-    assert!(actual.contains("// TODO(go2rust): original line: case 1:"));
+    assert!(actual.contains("// TODO(go2rust): original line: for _, value := range values {"));
     assert!(actual.contains(r#"println!("nested");"#));
 }
 
@@ -220,6 +218,48 @@ fn run() {
     loop {
         println!("tick");
         return;
+    }
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn converts_simple_switch_blocks() {
+    let source = r#"package main
+
+import "fmt"
+
+func describe(count int) {
+    switch count {
+    case 0:
+        fmt.Println("zero")
+    case 1, 2:
+        fmt.Println("small")
+    default:
+        fmt.Println("many")
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+
+fn describe(count: i32) {
+    match count {
+        0 => {
+            println!("zero");
+        },
+        1 | 2 => {
+            println!("small");
+        },
+        _ => {
+            println!("many");
+        },
     }
 }
 "#;
