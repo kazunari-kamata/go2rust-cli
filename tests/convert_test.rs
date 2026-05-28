@@ -36,7 +36,8 @@ fn keeps_unsupported_lines_as_todo_comments() {
     let source = r#"package main
 
 func main() {
-    for {
+    switch count {
+    case 1:
         fmt.Println("nested")
     }
 }
@@ -44,7 +45,8 @@ func main() {
 
     let actual = convert_source(source).expect("conversion should succeed");
 
-    assert!(actual.contains("// TODO(go2rust): original line: for {"));
+    assert!(actual.contains("// TODO(go2rust): original line: switch count {"));
+    assert!(actual.contains("// TODO(go2rust): original line: case 1:"));
     assert!(actual.contains(r#"println!("nested");"#));
 }
 
@@ -174,6 +176,51 @@ fn logIfEnabled(enabled: bool) {
 
 fn main() {
     logIfEnabled(true);
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn converts_simple_for_loops() {
+    let source = r#"package main
+
+import "fmt"
+
+func countdown(count int) {
+    for count > 0 {
+        fmt.Println(count)
+        count = count - 1
+    }
+}
+
+func run() {
+    for {
+        fmt.Println("tick")
+        return
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+
+fn countdown(count: i32) {
+    while count > 0 {
+        println!(count);
+        count = count - 1;
+    }
+}
+
+fn run() {
+    loop {
+        println!("tick");
+        return;
+    }
 }
 "#;
 

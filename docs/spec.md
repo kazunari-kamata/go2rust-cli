@@ -253,6 +253,38 @@ if count > 10 {
 }
 ```
 
+### simple conditional for loop
+
+入力:
+
+```go
+for count > 0 {
+}
+```
+
+出力:
+
+```rust
+while count > 0 {
+}
+```
+
+### infinite for loop
+
+入力:
+
+```go
+for {
+}
+```
+
+出力:
+
+```rust
+loop {
+}
+```
+
 ### return
 
 入力:
@@ -284,13 +316,13 @@ return;
 入力:
 
 ```go
-if count > 0 {
+switch count {
 ```
 
 出力:
 
 ```rust
-// TODO(go2rust): original line: if count > 0 {
+// TODO(go2rust): original line: switch count {
 ```
 
 ## 内部設計
@@ -313,7 +345,8 @@ if count > 0 {
 優先度の高い候補:
 
 - import ブロック
-- 単純な `for` 文
+- 3句 `for`
+- `range`
 - 複数戻り値
 - 配列、スライス、map の基本変換
 

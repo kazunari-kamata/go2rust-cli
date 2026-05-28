@@ -15,6 +15,8 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let if_re = Regex::new(r"^\s*if\s+(.+)\s*\{\s*$")?;
     let else_if_re = Regex::new(r"^\s*}\s*else\s+if\s+(.+)\s*\{\s*$")?;
     let else_re = Regex::new(r"^\s*}\s*else\s*\{\s*$")?;
+    let infinite_for_re = Regex::new(r"^\s*for\s*\{\s*$")?;
+    let conditional_for_re = Regex::new(r"^\s*for\s+([^;]+)\s*\{\s*$")?;
     let return_re = Regex::new(r"^\s*return(?:\s+(.+))?\s*$")?;
     let function_call_re = Regex::new(r"^\s*([A-Za-z_]\w*\(.*\))\s*$")?;
     let block_end_re = Regex::new(r"^\s*}\s*$")?;
@@ -67,6 +69,16 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             items.push(IrItem::ElseIfStart(translate_expression(caps[1].trim())));
         } else if else_re.is_match(line) {
             items.push(IrItem::ElseStart);
+        } else if infinite_for_re.is_match(line) {
+            items.push(IrItem::LoopStart);
+        } else if let Some(caps) = conditional_for_re.captures(line) {
+            let condition = caps[1].trim();
+            if condition.contains("range") || condition.contains(":=") {
+                unsupported_block_depth += 1;
+                items.push(IrItem::Todo(trimmed.to_string()));
+            } else {
+                items.push(IrItem::WhileStart(translate_expression(condition)));
+            }
         } else if let Some(caps) = return_re.captures(line) {
             items.push(IrItem::Return(
                 caps.get(1)

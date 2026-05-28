@@ -15,6 +15,8 @@ pub enum IrItem {
     IfStart(String),
     ElseIfStart(String),
     ElseStart,
+    LoopStart,
+    WhileStart(String),
     BlockEnd,
     Print(String),
     Println(String),
