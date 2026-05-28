@@ -1,0 +1,3 @@
+Cargo.lock linguist-generated
+docs/** linguist-documentation
+examples/** linguist-documentation
