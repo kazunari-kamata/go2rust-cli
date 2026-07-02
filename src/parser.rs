@@ -17,6 +17,7 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let else_re = Regex::new(r"^\s*}\s*else\s*\{\s*$")?;
     let infinite_for_re = Regex::new(r"^\s*for\s*\{\s*$")?;
     let conditional_for_re = Regex::new(r"^\s*for\s+([^;]+)\s*\{\s*$")?;
+    let condition_switch_re = Regex::new(r"^\s*switch\s*\{\s*$")?;
     let switch_re = Regex::new(r"^\s*switch\s+(.+)\s*\{\s*$")?;
     let case_re = Regex::new(r"^\s*case\s+(.+):\s*$")?;
     let default_re = Regex::new(r"^\s*default:\s*$")?;
@@ -26,6 +27,8 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
 
     let mut items = Vec::new();
     let mut unsupported_block_depth = 0usize;
+    let mut blocks = Vec::new();
+    let mut switches = Vec::new();
 
     for line in source.lines() {
         let trimmed = line.trim();
@@ -44,6 +47,7 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
                     .get(3)
                     .map(|go_type| rust_type(go_type.as_str()).to_string()),
             });
+            blocks.push(ParseBlockKind::General);
         } else if let Some(caps) = print_re.captures(line) {
             items.push(IrItem::Print(translate_expression(caps[1].trim())));
         } else if let Some(caps) = println_re.captures(line) {
@@ -68,12 +72,18 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             });
         } else if let Some(caps) = if_re.captures(line) {
             items.push(IrItem::IfStart(translate_expression(caps[1].trim())));
+            blocks.push(ParseBlockKind::General);
         } else if let Some(caps) = else_if_re.captures(line) {
+            blocks.pop();
             items.push(IrItem::ElseIfStart(translate_expression(caps[1].trim())));
+            blocks.push(ParseBlockKind::General);
         } else if else_re.is_match(line) {
+            blocks.pop();
             items.push(IrItem::ElseStart);
+            blocks.push(ParseBlockKind::General);
         } else if infinite_for_re.is_match(line) {
             items.push(IrItem::LoopStart);
+            blocks.push(ParseBlockKind::General);
         } else if let Some(caps) = conditional_for_re.captures(line) {
             let condition = caps[1].trim();
             if condition.contains("range") || condition.contains(":=") {
@@ -81,13 +91,28 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
                 items.push(IrItem::Todo(trimmed.to_string()));
             } else {
                 items.push(IrItem::WhileStart(translate_expression(condition)));
+                blocks.push(ParseBlockKind::General);
             }
+        } else if condition_switch_re.is_match(line) {
+            items.push(IrItem::SwitchStart("()".to_string()));
+            blocks.push(ParseBlockKind::Switch);
+            switches.push(SwitchKind::Condition);
         } else if let Some(caps) = switch_re.captures(line) {
             items.push(IrItem::SwitchStart(translate_expression(caps[1].trim())));
+            blocks.push(ParseBlockKind::Switch);
+            switches.push(SwitchKind::Expression);
         } else if let Some(caps) = case_re.captures(line) {
-            items.push(IrItem::CaseStart(translate_case_patterns(caps[1].trim())));
+            if let Some(kind) = switches.last().copied() {
+                items.push(IrItem::CaseStart(translate_case(caps[1].trim(), kind)));
+            } else {
+                items.push(IrItem::Todo(trimmed.to_string()));
+            }
         } else if default_re.is_match(line) {
-            items.push(IrItem::DefaultCaseStart);
+            if switches.last().is_some() {
+                items.push(IrItem::DefaultCaseStart);
+            } else {
+                items.push(IrItem::Todo(trimmed.to_string()));
+            }
         } else if let Some(caps) = return_re.captures(line) {
             items.push(IrItem::Return(
                 caps.get(1)
@@ -99,6 +124,9 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             unsupported_block_depth -= 1;
             items.push(IrItem::Todo(trimmed.to_string()));
         } else if block_end_re.is_match(line) {
+            if matches!(blocks.pop(), Some(ParseBlockKind::Switch)) {
+                switches.pop();
+            }
             items.push(IrItem::BlockEnd);
         } else {
             if trimmed.ends_with('{') {
@@ -159,11 +187,34 @@ fn translate_expression(expression: &str) -> String {
     expression.trim().to_string()
 }
 
-fn translate_case_patterns(patterns: &str) -> String {
-    patterns
+#[derive(Clone, Copy)]
+enum ParseBlockKind {
+    General,
+    Switch,
+}
+
+#[derive(Clone, Copy)]
+enum SwitchKind {
+    Expression,
+    Condition,
+}
+
+fn translate_case(patterns: &str, kind: SwitchKind) -> String {
+    let parts = patterns
         .split(',')
         .map(str::trim)
         .filter(|pattern| !pattern.is_empty())
-        .collect::<Vec<_>>()
-        .join(" | ")
+        .collect::<Vec<_>>();
+
+    match kind {
+        SwitchKind::Expression => parts.join(" | "),
+        SwitchKind::Condition => format!(
+            "_ if {}",
+            parts
+                .into_iter()
+                .map(translate_expression)
+                .collect::<Vec<_>>()
+                .join(" || ")
+        ),
+    }
 }
