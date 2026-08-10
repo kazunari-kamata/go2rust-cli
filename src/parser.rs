@@ -5,6 +5,9 @@ use regex::Regex;
 pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let package_re = Regex::new(r"^\s*package\s+(\w+)\s*$")?;
     let import_re = Regex::new(r#"^\s*import\s+"([^"]+)"\s*$"#)?;
+    let import_block_start_re = Regex::new(r"^\s*import\s*\(\s*$")?;
+    let import_block_spec_re = Regex::new(r#"^\s*"([^"]+)"\s*$"#)?;
+    let import_block_end_re = Regex::new(r"^\s*\)\s*$")?;
     let func_re =
         Regex::new(r"^\s*func\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*([A-Za-z_]\w*)?\s*\{\s*$")?;
     let print_re = Regex::new(r#"^\s*fmt\.Print\((.*)\)\s*$"#)?;
@@ -29,16 +32,29 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let mut unsupported_block_depth = 0usize;
     let mut blocks = Vec::new();
     let mut switches = Vec::new();
+    let mut in_import_block = false;
 
     for line in source.lines() {
         let trimmed = line.trim();
 
-        if trimmed.is_empty() {
+        if in_import_block {
+            if trimmed.is_empty() {
+                items.push(IrItem::Empty);
+            } else if import_block_end_re.is_match(line) {
+                in_import_block = false;
+            } else if let Some(caps) = import_block_spec_re.captures(line) {
+                items.push(IrItem::Comment(format!("Go import: {}", &caps[1])));
+            } else {
+                items.push(IrItem::Todo(trimmed.to_string()));
+            }
+        } else if trimmed.is_empty() {
             items.push(IrItem::Empty);
         } else if let Some(caps) = package_re.captures(line) {
             items.push(IrItem::Comment(format!("Go package: {}", &caps[1])));
         } else if let Some(caps) = import_re.captures(line) {
             items.push(IrItem::Comment(format!("Go import: {}", &caps[1])));
+        } else if import_block_start_re.is_match(line) {
+            in_import_block = true;
         } else if let Some(caps) = func_re.captures(line) {
             items.push(IrItem::FunctionStart {
                 name: caps[1].to_string(),

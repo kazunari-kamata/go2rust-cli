@@ -67,6 +67,7 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 
 - `package main` をコメントとして出力
 - `import "fmt"` をコメントとして出力
+- `import ( "fmt" "strings" )` を import ごとのコメントとして出力
 - `func main() { ... }` を `fn main() { ... }` に変換
 - `func add(a, b int) int { ... }` を `fn add(a: i32, b: i32) -> i32 { ... }` に変換
 - `fmt.Print("hello")` を `print!("hello");` に変換
@@ -97,7 +98,7 @@ docker run --rm -v "$PWD:/workspace" ghcr.io/kazunari-kamata/go2rust-cli:0.1.0 c
 - fallthrough、複雑な case 条件
 - 複雑な条件式
 - 構造体、インターフェース、メソッド
-- 複数 import や import ブロック
+- alias import、blank import、dot import
 - 複雑な Go の型推論
 - goroutine、channel
 - エラー処理の自動変換

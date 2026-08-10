@@ -54,6 +54,7 @@ go2rust-cli convert -i input.go --check
 
 - `package main` -> `// Go package: main`
 - `import "fmt"` -> `// Go import: fmt`
+- `import ( "fmt" "strings" )` -> import ごとの `// Go import: ...`
 - `func main() { ... }` -> `fn main() { ... }`
 - `fmt.Println("hello")` -> `println!("hello");`
 - `var name string` -> `let mut name: String;`

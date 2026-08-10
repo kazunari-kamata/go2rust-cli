@@ -69,6 +69,44 @@ import "fmt"
 // Go import: fmt
 ```
 
+### import block
+
+入力:
+
+```go
+import (
+    "fmt"
+    "strings"
+)
+```
+
+出力:
+
+```rust
+// Go import: fmt
+// Go import: strings
+```
+
+alias import、blank import、dot import は初期版では自動変換せず、TODO コメントとして残す。
+
+入力:
+
+```go
+import (
+    alias "fmt"
+    _ "net/http/pprof"
+    . "strings"
+)
+```
+
+出力:
+
+```rust
+// TODO(go2rust): original line: alias "fmt"
+// TODO(go2rust): original line: _ "net/http/pprof"
+// TODO(go2rust): original line: . "strings"
+```
+
 ### main function
 
 入力:
@@ -405,7 +443,7 @@ for _, value := range values {
 
 優先度の高い候補:
 
-- import ブロック
+- alias import、blank import、dot import
 - 3句 `for`
 - `range`
 - 複数戻り値
