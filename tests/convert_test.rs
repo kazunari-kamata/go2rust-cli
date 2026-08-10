@@ -32,6 +32,57 @@ fn main() {
 }
 
 #[test]
+fn converts_import_blocks_to_import_comments() {
+    let source = r#"package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+func main() {
+    fmt.Println(strings.ToUpper("hello"))
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+// Go import: strings
+
+fn main() {
+    println!(strings.ToUpper("hello"));
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn keeps_unsupported_import_specs_as_todo_comments() {
+    let source = r#"package main
+
+import (
+    alias "fmt"
+    _ "net/http/pprof"
+    . "strings"
+)
+
+func main() {
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    assert!(actual.contains(r#"// TODO(go2rust): original line: alias "fmt""#));
+    assert!(actual.contains(r#"// TODO(go2rust): original line: _ "net/http/pprof""#));
+    assert!(actual.contains(r#"// TODO(go2rust): original line: . "strings""#));
+    assert!(!actual.contains("// TODO(go2rust): original line: )"));
+}
+
+#[test]
 fn keeps_unsupported_lines_as_todo_comments() {
     let source = r#"package main
 
