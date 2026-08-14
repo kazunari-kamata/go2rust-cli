@@ -277,6 +277,75 @@ fn run() {
 }
 
 #[test]
+fn converts_three_clause_for_loops() {
+    let source = r#"package main
+
+import "fmt"
+
+func countTo(limit int) {
+    for count := 0; count < limit; count++ {
+        fmt.Println(count)
+    }
+}
+
+func countdown() {
+    count := 3
+    for ; count > 0; count-- {
+        fmt.Println(count)
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    let expected = r#"// Go package: main
+
+// Go import: fmt
+
+fn countTo(limit: i32) {
+    let mut count = 0;
+    while count < limit {
+        println!(count);
+        count = count + 1;
+    }
+}
+
+fn countdown() {
+    let mut count = 3;
+    while count > 0 {
+        println!(count);
+        count = count - 1;
+    }
+}
+"#;
+
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn keeps_unsupported_three_clause_for_loops_as_todo_comments() {
+    let source = r#"package main
+
+func main() {
+    for item := next(); item != nil; item.Next() {
+        if item.Enabled() {
+            log(item)
+        }
+    }
+}
+"#;
+
+    let actual = convert_source(source).expect("conversion should succeed");
+
+    assert!(actual.contains(
+        "// TODO(go2rust): original line: for item := next(); item != nil; item.Next() {"
+    ));
+    assert!(actual.contains("if item.Enabled() {"));
+    assert!(actual.contains("log(item);"));
+    assert!(actual.contains("// TODO(go2rust): original line: }"));
+}
+
+#[test]
 fn converts_simple_switch_blocks() {
     let source = r#"package main
 
