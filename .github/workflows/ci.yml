@@ -46,6 +46,13 @@ jobs:
             fi
           done < <(find go2rust-cli-samples/samples/basic -name '*.go' | sort)
 
+          while IFS= read -r -d '' expected; do
+            sample="${expected%/expected.rs}/main.go"
+            echo "Comparing sample output: ${sample}"
+            output="$(cargo run --quiet -- convert -i "${sample}")"
+            diff -u "${expected}" <(printf '%s\n' "${output}")
+          done < <(find go2rust-cli-samples/samples/basic -name expected.rs -print0)
+
           while IFS= read -r sample; do
             echo "Converting unsupported sample: ${sample}"
             output="$(cargo run --quiet -- convert -i "${sample}")"

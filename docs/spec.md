@@ -323,6 +323,28 @@ loop {
 }
 ```
 
+### three-clause for loop
+
+入力:
+
+```go
+for count := 0; count < limit; count++ {
+    fmt.Println(count)
+}
+```
+
+出力:
+
+```rust
+let mut count = 0;
+while count < limit {
+    println!(count);
+    count = count + 1;
+}
+```
+
+初期化には `var`、`:=`、単純な代入を、更新式には単純な代入と `++` / `--` を使用できる。条件なしの 3 句 `for` や、それ以外の初期化・更新式は TODO コメントとして残す。
+
 ### simple switch block
 
 入力:
@@ -444,7 +466,6 @@ for _, value := range values {
 優先度の高い候補:
 
 - alias import、blank import、dot import
-- 3句 `for`
 - `range`
 - 複数戻り値
 - 配列、スライス、map の基本変換

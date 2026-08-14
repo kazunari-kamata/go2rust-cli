@@ -59,6 +59,7 @@ go2rust-cli convert -i input.go --check
 - `fmt.Println("hello")` -> `println!("hello");`
 - `var name string` -> `let mut name: String;`
 - `var count int = 1` -> `let mut count: i32 = 1;`
+- `for count := 0; count < limit; count++ { ... }` -> 初期化 + `while` + ループ末尾の更新式
 - `return x` -> `return x;`
 
 ## 未対応構文の扱い

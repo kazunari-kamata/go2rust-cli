@@ -19,7 +19,10 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
     let else_if_re = Regex::new(r"^\s*}\s*else\s+if\s+(.+)\s*\{\s*$")?;
     let else_re = Regex::new(r"^\s*}\s*else\s*\{\s*$")?;
     let infinite_for_re = Regex::new(r"^\s*for\s*\{\s*$")?;
+    let three_clause_for_re = Regex::new(r"^\s*for\s*(.*?)\s*;\s*(.*?)\s*;\s*(.*?)\s*\{\s*$")?;
     let conditional_for_re = Regex::new(r"^\s*for\s+([^;]+)\s*\{\s*$")?;
+    let increment_re = Regex::new(r"^\s*([A-Za-z_]\w*)\s*\+\+\s*$")?;
+    let decrement_re = Regex::new(r"^\s*([A-Za-z_]\w*)\s*--\s*$")?;
     let condition_switch_re = Regex::new(r"^\s*switch\s*\{\s*$")?;
     let switch_re = Regex::new(r"^\s*switch\s+(.+)\s*\{\s*$")?;
     let case_re = Regex::new(r"^\s*case\s+(.+):\s*$")?;
@@ -100,11 +103,39 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
         } else if infinite_for_re.is_match(line) {
             items.push(IrItem::LoopStart);
             blocks.push(ParseBlockKind::General);
+        } else if let Some(caps) = three_clause_for_re.captures(line) {
+            let initializer = caps[1].trim();
+            let condition = caps[2].trim();
+            let post = caps[3].trim();
+
+            if condition.is_empty() {
+                items.push(IrItem::Todo(trimmed.to_string()));
+                blocks.push(ParseBlockKind::Unsupported);
+            } else if let Some(post) =
+                parse_for_post(post, &assignment_re, &increment_re, &decrement_re)
+            {
+                if let Some(initializer) =
+                    parse_for_initializer(initializer, &var_re, &short_var_re, &assignment_re)
+                {
+                    items.push(initializer);
+                    items.push(IrItem::WhileStart(translate_expression(condition)));
+                    blocks.push(ParseBlockKind::ForClause { post });
+                } else if initializer.is_empty() {
+                    items.push(IrItem::WhileStart(translate_expression(condition)));
+                    blocks.push(ParseBlockKind::ForClause { post });
+                } else {
+                    items.push(IrItem::Todo(trimmed.to_string()));
+                    blocks.push(ParseBlockKind::Unsupported);
+                }
+            } else {
+                items.push(IrItem::Todo(trimmed.to_string()));
+                blocks.push(ParseBlockKind::Unsupported);
+            }
         } else if let Some(caps) = conditional_for_re.captures(line) {
             let condition = caps[1].trim();
             if condition.contains("range") || condition.contains(":=") {
-                unsupported_block_depth += 1;
                 items.push(IrItem::Todo(trimmed.to_string()));
+                blocks.push(ParseBlockKind::Unsupported);
             } else {
                 items.push(IrItem::WhileStart(translate_expression(condition)));
                 blocks.push(ParseBlockKind::General);
@@ -136,10 +167,18 @@ pub fn parse(source: &str) -> Result<Vec<IrItem>> {
             ));
         } else if let Some(caps) = function_call_re.captures(line) {
             items.push(IrItem::ExpressionStmt(translate_expression(caps[1].trim())));
+        } else if block_end_re.is_match(line)
+            && matches!(blocks.last(), Some(ParseBlockKind::Unsupported))
+        {
+            blocks.pop();
+            items.push(IrItem::Todo(trimmed.to_string()));
         } else if block_end_re.is_match(line) && unsupported_block_depth > 0 {
             unsupported_block_depth -= 1;
             items.push(IrItem::Todo(trimmed.to_string()));
         } else if block_end_re.is_match(line) {
+            if let Some(ParseBlockKind::ForClause { post }) = blocks.last() {
+                items.push(post.clone());
+            }
             if matches!(blocks.pop(), Some(ParseBlockKind::Switch)) {
                 switches.pop();
             }
@@ -203,10 +242,65 @@ fn translate_expression(expression: &str) -> String {
     expression.trim().to_string()
 }
 
-#[derive(Clone, Copy)]
+fn parse_for_initializer(
+    initializer: &str,
+    var_re: &Regex,
+    short_var_re: &Regex,
+    assignment_re: &Regex,
+) -> Option<IrItem> {
+    if let Some(caps) = var_re.captures(initializer) {
+        Some(IrItem::VarDecl {
+            name: caps[1].to_string(),
+            rust_type: rust_type(&caps[2]).to_string(),
+            value: caps
+                .get(3)
+                .map(|value| translate_expression(value.as_str().trim())),
+        })
+    } else if let Some(caps) = short_var_re.captures(initializer) {
+        Some(IrItem::ShortVarDecl {
+            name: caps[1].to_string(),
+            value: translate_expression(caps[2].trim()),
+        })
+    } else {
+        assignment_re
+            .captures(initializer)
+            .map(|caps| IrItem::Assignment {
+                name: caps[1].to_string(),
+                value: translate_expression(caps[2].trim()),
+            })
+    }
+}
+
+fn parse_for_post(
+    post: &str,
+    assignment_re: &Regex,
+    increment_re: &Regex,
+    decrement_re: &Regex,
+) -> Option<IrItem> {
+    if let Some(caps) = increment_re.captures(post) {
+        Some(IrItem::Assignment {
+            name: caps[1].to_string(),
+            value: format!("{} + 1", &caps[1]),
+        })
+    } else if let Some(caps) = decrement_re.captures(post) {
+        Some(IrItem::Assignment {
+            name: caps[1].to_string(),
+            value: format!("{} - 1", &caps[1]),
+        })
+    } else {
+        assignment_re.captures(post).map(|caps| IrItem::Assignment {
+            name: caps[1].to_string(),
+            value: translate_expression(caps[2].trim()),
+        })
+    }
+}
+
+#[derive(Clone)]
 enum ParseBlockKind {
     General,
     Switch,
+    ForClause { post: IrItem },
+    Unsupported,
 }
 
 #[derive(Clone, Copy)]
